@@ -1,0 +1,10 @@
+spring:
+  data:
+    redis:
+      port: 6379
+      host: localhost
+  cache:
+    type: redis
+
+api:
+  key: 1cdebbfb86406d353f5ae8a402752069
