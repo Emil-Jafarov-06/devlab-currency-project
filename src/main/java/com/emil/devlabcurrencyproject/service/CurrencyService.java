@@ -7,11 +7,7 @@ import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.format.number.money.CurrencyUnitFormatter;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
@@ -49,7 +45,6 @@ public class CurrencyService {
                 put("latest", gson.fromJson(apiResponse, CurrencyRateResponse.class));
     }
 
-    /*
     @Recover
     public CurrencyRateResponse recoverCurrencyInfo(ApiDoesNotRespondException e) {
         log.warn("API does not respond, using cached data!");
@@ -58,7 +53,6 @@ public class CurrencyService {
                 get("latest").
                 get();
     }
-     */
 
     public CurrencyRateResponse getCurrencyRates() {
         var cache = Objects.requireNonNull(cacheManager.getCache("currencyRates")).get("latest");;
@@ -85,6 +79,9 @@ public class CurrencyService {
 
     public BigDecimal convertCurrency(String base, String to, BigDecimal amount) {
         CurrencyRateResponse currencyRateResponse = getCurrencyRates();
+        if(base.equals(to)) return amount;
+        if(base.equals("EUR")) return amount.multiply(currencyRateResponse.getRates().get(to));
+        if(to.equals("EUR")) return amount.divide(currencyRateResponse.getRates().get(base), 7, RoundingMode.CEILING);
         BigDecimal eurToBaseRate = currencyRateResponse.getRates().get(base);
         BigDecimal eurToTargetRate = currencyRateResponse.getRates().get(to);
         return amount.divide(eurToBaseRate, 7, RoundingMode.CEILING).multiply(eurToTargetRate);
